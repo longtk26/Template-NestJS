@@ -14,12 +14,13 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalPipes(new ValidationPipe());
 
-  
   settingSwagger(app);
   app.enableCors();
   await app.listen(process.env.PORT ?? 3000, () => {
     // Using pino logger
-    app.get(LoggerPino).log('Todo app is running on port ' + process.env.PORT);
+    app
+      .get(LoggerPino)
+      .log('Template app is running on port ' + process.env.PORT);
   });
 }
 

@@ -8,5 +8,7 @@ migratedev:
 	bunx prisma migrate dev
 migratepull:
 	bunx prisma db pull
+format:
+	bunx prisma format
 
-.PHONY: newmg migratedown migratepull migrateup migratedev
+.PHONY: newmg migratedown migratepull migrateup migratedev format
