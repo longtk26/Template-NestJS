@@ -1,15 +1,14 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD, Reflector } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 import { JwtStrategy } from './strategies/jwt/jwt.strategy';
-import { AuthGuard } from './auth/auth.guard';
+import { GlobalAuthGuard } from './auth/global-auth.guard';
 
 @Module({
-  imports: [],
   providers: [
     JwtStrategy,
     {
       provide: APP_GUARD,
-      useClass: AuthGuard,
+      useClass: GlobalAuthGuard,
     },
   ],
   exports: [JwtStrategy],
