@@ -3,11 +3,10 @@ model User {
   name       String
   email      String    @unique
   password   String
+  isVerified Boolean   @default(false)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  isVerified Boolean   @default(false)
   deletedAt  DateTime?
-  tasks      Task[]
 
   @@map("users")
 }

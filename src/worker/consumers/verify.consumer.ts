@@ -1,7 +1,7 @@
 import { WorkerHost, Processor } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { PinoLogger } from 'nestjs-pino';
-import { MailService } from 'src/modules/mail/service/mail.service';
+import { MailService } from 'src/applications/mail/service/mail.service';
 import { WorkerQueuesEnum } from '../worker.enum';
 
 @Processor(WorkerQueuesEnum.SEND_EMAIL_VERIFICATION_QUEUE)

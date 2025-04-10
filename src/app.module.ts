@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { UserModule } from './modules/user/user.module';
+import { UserModule } from './applications/user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import config from './config/config';
 import { LoggerModule } from 'nestjs-pino';
@@ -8,7 +8,8 @@ import { RedisModule } from './core/cache/redis.module';
 import { WorkerModule } from './worker/worker.module';
 import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter } from './filter/http-exception.filter';
-import { TaskModule } from './modules/tasks/task.module';
+import { HealthModule } from './applications/health/health.module';
+import { GuardModule } from './applications/guards/guard.module';
 
 @Module({
   imports: [
@@ -17,8 +18,9 @@ import { TaskModule } from './modules/tasks/task.module';
       load: [config],
     }),
     LoggerModule.forRoot(specConfigsPino),
+    HealthModule,
     UserModule,
-    TaskModule,
+    GuardModule,
     RedisModule,
     WorkerModule,
   ],
