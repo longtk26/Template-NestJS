@@ -1,0 +1,22 @@
+enum TokenType {
+    ACCESS
+    REFRESH
+    RESET_PASSWORD
+    VERIFY_EMAIL
+    TWO_FACTOR
+}
+
+model Token {
+    id        String    @id @default(uuid())
+    token     String    @unique
+    type      TokenType
+    userId    String    @map("user_id")
+    expiredAt DateTime?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime? @updatedAt
+    deletedAt DateTime?
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@map("tokens")
+}

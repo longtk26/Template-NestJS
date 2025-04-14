@@ -10,6 +10,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter } from './filter/http-exception.filter';
 import { HealthModule } from './applications/health/health.module';
 import { GuardModule } from './applications/guards/guard.module';
+import { AuthModule } from './applications/auth/auth.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { GuardModule } from './applications/guards/guard.module';
     LoggerModule.forRoot(specConfigsPino),
     HealthModule,
     UserModule,
+    AuthModule,
     GuardModule,
     RedisModule,
     WorkerModule,

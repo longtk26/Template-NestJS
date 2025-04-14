@@ -1,14 +1,15 @@
 model User {
-  id         String     @id @default(uuid())
-  name       String
-  email      String     @unique
-  password   String
-  isVerified Boolean    @default(false)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  deletedAt  DateTime?
-  
-  userRole   UserRole[]
+  id                       String    @id @default(uuid())
+  name                     String
+  email                    String    @unique
+  password                 String
+  isRequiredChangePassword Boolean   @default(false)
+  isVerified               Boolean   @default(false)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime? @updatedAt
+  deletedAt                DateTime?
+
+  tokens Token[]
 
   @@map("users")
 }

@@ -22,6 +22,7 @@
   "dependencies": {
     "@casl/ability": "^6.7.3",
     "@keyv/redis": "^4.2.0",
+    "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/bullmq": "^11.0.2",
     "@nestjs/cache-manager": "^3.0.0",
     "@nestjs/common": "^10.0.0",
@@ -39,6 +40,9 @@
     "cacheable": "^1.8.8",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "dayjs": "^1.11.13",
+    "dayjs-plugin-utc": "^0.1.2",
+    "ejs": "^3.1.10",
     "firebase-admin": "^13.2.0",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
@@ -99,8 +103,5 @@
     "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/$1"
     }
-  },
-  "prisma": {
-    "seed": "ts-node prisma/seeds/seed.ts"
   }
 }

@@ -7,4 +7,5 @@ export type CreateUserRepository = {
 export type UpdateUserRepository = {
   name?: string;
   isVerified?: boolean;
-}
+  password?: string;
+};
