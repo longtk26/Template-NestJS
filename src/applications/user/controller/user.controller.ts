@@ -3,6 +3,8 @@ import {
   Controller,
   Get,
   HttpStatus,
+  Param,
+  Patch,
   Post,
   Req,
   Res,
@@ -18,6 +20,7 @@ import {
   GetUserResponseDataDTO,
   GetUserResponseDTO,
   SignInDTO,
+  UpdateUserDTO,
   VerifyEmailUserResponseDataDTO,
   VerifyEmailUserResponseDTO,
   VerifyUserResponseDataDTO,
@@ -25,6 +28,7 @@ import {
 } from '../dto/user.dto';
 import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { UserRequest } from '../interface/user.interface';
+import { Public } from 'src/applications/guards/decorators/guard.decorator';
 
 @Controller('user')
 export class UserController {
@@ -80,6 +84,23 @@ export class UserController {
     return new SuccessResponse<GetUserResponseDataDTO>({
       status: HttpStatus.OK,
       message: 'User profile',
+      data: data,
+    }).send(res);
+  }
+
+  @Patch(':id')
+  @Public()
+  async updateUser(
+    @Res() res: Response,
+    @Req() req: UserRequest,
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDTO,
+  ) {
+    const data = await this.userService.updateUser(id, updateUserDto);
+
+    return new SuccessResponse({
+      status: HttpStatus.OK,
+      message: 'Update user successfully',
       data: data,
     }).send(res);
   }

@@ -12,6 +12,7 @@ import { Prisma, TokenType } from '@prisma/client';
 import { MailService } from 'src/applications/mail/service/mail.service';
 import { console } from 'inspector';
 import { PinoLogger } from 'nestjs-pino';
+import { PrismaService } from 'src/core/orm/prisma';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +21,7 @@ export class AuthService {
     private readonly tokenRepository: TokenRepository,
     private readonly mailService: MailService,
     private readonly logger: PinoLogger,
+    private readonly prismaService: PrismaService,
   ) {}
 
   async forgotPassword(data: ForgotPasswordRequestDto) {
@@ -79,13 +81,16 @@ export class AuthService {
     }
 
     const hashedPassword = await bcryptjs.hash(data.password, 10);
-    await this.userRepository.updateUser(tokenInfo.userId, {
-      password: hashedPassword,
-    });
-    await this.tokenRepository.delete({
-      options: {
-        id: tokenInfo.id,
-      },
+
+    await this.tokenRepository.transaction(async () => {
+      await this.userRepository.updateUser(tokenInfo.userId, {
+        password: hashedPassword,
+      });
+      await this.tokenRepository.delete({
+        options: {
+          id: tokenInfo.id,
+        },
+      });
     });
 
     // Send confirmation email

@@ -14,10 +14,8 @@ export class TokenRepository extends BaseRepository<
   Prisma.TokenWhereInput
 > {
   protected readonly modelName: string = 'token';
-  protected readonly prisma: PrismaService;
   constructor(protected readonly prismaService: PrismaService) {
-    super();
-    this.prisma = prismaService;
+    super(prismaService);
   }
 
   async findTokenByToken(token: string) {
