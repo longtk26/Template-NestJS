@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
-import { CreateUserDTO, SignInDTO } from '../dto/user.dto';
+import { CreateUserDTO, SignInDTO, UpdateUserDTO } from '../dto/user.dto';
 import { UserRepository } from '../repository/user.repository';
 import { ConfigService } from '@nestjs/config';
 import { ConfigEnum } from 'src/config/config';
@@ -94,6 +94,25 @@ export class UserService {
       name: data.name,
       email: data.email,
       isVerified: data.isVerified,
+    };
+  }
+
+  async updateUser(userId: string, updateUserDto: UpdateUserDTO) {
+    const userDb = await this.userRepository.getUserById(userId);
+    this.logger.info(`userId: ${userId}`);
+    this.logger.info(`updateUserDto: ${JSON.stringify(userDb)}`);
+
+    if (!userDb) {
+      throw new BadRequestException('User not found');
+    }
+
+    const updatedUser = await this.userRepository.updateUser(
+      userId,
+      updateUserDto,
+    );
+
+    return {
+      id: updatedUser.id,
     };
   }
 }

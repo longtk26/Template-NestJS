@@ -79,6 +79,11 @@ export class GetUserResponseDataDTO {
   isVerified: boolean;
 }
 
+export class UpdateUserDTO {
+  name?: string | null = null;
+  phone?: string | null = null;
+}
+
 export class AuthUserResponseDTO extends SuccessResponse<AuthUserResponseDataDTO> {
   @ApiProperty({ type: () => AuthUserResponseDataDTO })
   protected data: AuthUserResponseDataDTO;
