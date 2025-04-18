@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, Token as PrismaToken, TokenType } from '@prisma/client';
 import dayjs from 'dayjs';
-import { PrismaService } from 'src/core/orm/prisma';
+import { PrismaClientManager } from 'src/core/orm/prisma-client-manager';
 import { BaseRepository } from 'src/core/repository/base.repository';
 import utc from 'dayjs/plugin/utc';
 import { PinoLogger } from 'nestjs-pino';
@@ -14,9 +14,6 @@ export class TokenRepository extends BaseRepository<
   Prisma.TokenWhereInput
 > {
   protected readonly modelName: string = 'token';
-  constructor(protected readonly prismaService: PrismaService) {
-    super(prismaService);
-  }
 
   async findTokenByToken(token: string) {
     console.log(`current day is ${dayjs().utc()}`);

@@ -5,7 +5,9 @@ import { PinoLogger } from 'nestjs-pino';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor(private readonly logger: PinoLogger) {
-    super();
+    super({
+      log: ['query', 'info', 'warn', 'error'],
+    });
     this.logger.setContext(PrismaService.name);
   }
 

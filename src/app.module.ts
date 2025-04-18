@@ -11,6 +11,7 @@ import { HttpExceptionFilter } from './filter/http-exception.filter';
 import { HealthModule } from './applications/health/health.module';
 import { GuardModule } from './applications/guards/guard.module';
 import { AuthModule } from './applications/auth/auth.module';
+import { RequestContextModule } from './core/cls/cls.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AuthModule } from './applications/auth/auth.module';
     UserModule,
     AuthModule,
     GuardModule,
+    RequestContextModule,
     RedisModule,
     WorkerModule,
   ],

@@ -15,12 +15,6 @@ export class UserRepository extends BaseRepository<
   Prisma.UserWhereInput
 > {
   protected readonly modelName: string = 'user';
-  constructor(
-    private readonly prismaService: PrismaService,
-    private readonly logger: PinoLogger,
-  ) {
-    super(prismaService);
-  }
 
   async getUserByEmail(email: string) {
     const user = this.prisma.user.findUnique({
@@ -53,8 +47,7 @@ export class UserRepository extends BaseRepository<
   }
 
   async updateUser(userId: string, data: UpdateUserRepository) {
-    const prisma = await this.getPrismaInstance();
-    const user = prisma.user.update({
+    const user = this.prisma.user.update({
       where: {
         id: userId,
       },
