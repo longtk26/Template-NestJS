@@ -131,7 +131,7 @@ function displayUserProfile(preferences: UserPreferences) {
 
 ##### Best Practices
 
-1. Enable `strictNullChecks` in your TypeScript configuration (already enabled in this template)
+1. Enable `strictNullChecks` in your TypeScript configuration
 2. Use `undefined` for uninitialized variables and optional parameters/properties
 3. Use `null` when you want to explicitly indicate absence of a value
 4. Use type guards or the non-null assertion operator `!` when you're certain a value isn't null/undefined
