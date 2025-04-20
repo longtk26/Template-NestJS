@@ -7,6 +7,8 @@ import {
 } from '../types/user.types';
 import { BaseRepository } from 'src/core/repository/base.repository';
 import { Prisma, User as PrismaUser } from '@prisma/client';
+import { TransactionHost } from '@nestjs-cls/transactional';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 
 @Injectable()
 export class UserRepository extends BaseRepository<
@@ -16,8 +18,12 @@ export class UserRepository extends BaseRepository<
 > {
   protected readonly modelName: string = 'user';
 
+  constructor(txHost: TransactionHost<TransactionalAdapterPrisma>) {
+    super(txHost);
+  }
+
   async getUserByEmail(email: string) {
-    const user = this.prisma.user.findUnique({
+    const user = this.prisma.tx.user.findUnique({
       where: {
         email,
       },
@@ -27,7 +33,7 @@ export class UserRepository extends BaseRepository<
   }
 
   async getUserById(userId: string) {
-    const user = this.prisma.user.findUnique({
+    const user = this.prisma.tx.user.findUnique({
       where: {
         id: userId,
       },
@@ -37,7 +43,7 @@ export class UserRepository extends BaseRepository<
   }
 
   async createUser(createUserRepository: CreateUserRepository) {
-    const data = this.prisma.user.create({
+    const data = this.prisma.tx.user.create({
       data: {
         ...createUserRepository,
       },
@@ -47,7 +53,7 @@ export class UserRepository extends BaseRepository<
   }
 
   async updateUser(userId: string, data: UpdateUserRepository) {
-    const user = this.prisma.user.update({
+    const user = this.prisma.tx.user.update({
       where: {
         id: userId,
       },

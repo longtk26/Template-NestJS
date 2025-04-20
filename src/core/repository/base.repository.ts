@@ -1,29 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../orm/prisma';
-import { PrismaClientManager } from '../orm/prisma-client-manager';
-import { Prisma } from '@prisma/client';
+import { TransactionHost } from '@nestjs-cls/transactional';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 
 @Injectable()
 export abstract class BaseRepository<T, C, O> {
   protected readonly modelName: string;
-  protected readonly prisma: Prisma.TransactionClient | PrismaService;
+  protected readonly prisma: TransactionHost<TransactionalAdapterPrisma>;
 
-  constructor(protected readonly prismaClientManager: PrismaClientManager) {
-    this.prisma = this.prismaClientManager.getClient();
+  constructor(txHost: TransactionHost<TransactionalAdapterPrisma>) {
+    this.prisma = txHost;
   }
 
   async create({ data }: { data: C }): Promise<T> {
-    return await this.prisma[this.modelName].create({
+    return this.prisma.tx[this.modelName].create({
       data,
     });
   }
 
   async findMany(): Promise<T[]> {
-    return await this.prisma[this.modelName].findMany();
+    return this.prisma.tx[this.modelName].findMany();
   }
 
   async findOne({ options }: { options: O }): Promise<T> {
-    return await this.prisma[this.modelName].findUnique({
+    return this.prisma.tx[this.modelName].findUnique({
       where: options,
     });
   }
@@ -35,14 +34,14 @@ export abstract class BaseRepository<T, C, O> {
     data: Partial<T>;
     options: O;
   }): Promise<T> {
-    return await this.prisma[this.modelName].update({
+    return this.prisma.tx[this.modelName].update({
       where: options,
       data,
     });
   }
 
   async delete({ options }: { options: O }): Promise<T> {
-    return await this.prisma[this.modelName].delete({
+    return this.prisma.tx[this.modelName].delete({
       where: options,
     });
   }

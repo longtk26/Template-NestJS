@@ -6,6 +6,8 @@
       "dependencies": {
         "@casl/ability": "^6.7.3",
         "@keyv/redis": "^4.2.0",
+        "@nestjs-cls/transactional": "^2.7.0",
+        "@nestjs-cls/transactional-adapter-prisma": "^1.2.20",
         "@nestjs-modules/mailer": "^2.0.2",
         "@nestjs/bullmq": "^11.0.2",
         "@nestjs/cache-manager": "^3.0.0",
@@ -331,6 +333,10 @@
     "@napi-rs/nice-win32-ia32-msvc": ["@napi-rs/nice-win32-ia32-msvc@1.0.1", "", { "os": "win32", "cpu": "ia32" }, "sha512-t7eBAyPUrWL8su3gDxw9xxxqNwZzAqKo0Szv3IjVQd1GpXXVkb6vBBQUuxfIYaXMzZLwlxRQ7uzM2vdUE9ULGw=="],
 
     "@napi-rs/nice-win32-x64-msvc": ["@napi-rs/nice-win32-x64-msvc@1.0.1", "", { "os": "win32", "cpu": "x64" }, "sha512-JlF+uDcatt3St2ntBG8H02F1mM45i5SF9W+bIKiReVE6wiy3o16oBP/yxt+RZ+N6LbCImJXJ6bXNO2kn9AXicg=="],
+
+    "@nestjs-cls/transactional": ["@nestjs-cls/transactional@2.7.0", "", { "peerDependencies": { "@nestjs/common": ">= 10 < 12", "@nestjs/core": ">= 10 < 12", "nestjs-cls": "^5.4.3", "reflect-metadata": "*", "rxjs": ">= 7" } }, "sha512-X7riOgwLNFGw0/UC/xJQri2pdRBdr4X2y88F8VXKhwqWVB6iy0P17l7V656p67mRaRSb1hsIMnPKZT+dXVIX5g=="],
+
+    "@nestjs-cls/transactional-adapter-prisma": ["@nestjs-cls/transactional-adapter-prisma@1.2.20", "", { "peerDependencies": { "@nestjs-cls/transactional": "^2.7.0", "@prisma/client": "> 4 < 7", "nestjs-cls": "^5.4.3", "prisma": "> 4 < 7" } }, "sha512-P7ha7XN0lJrfrOTXvAzb+aULtZbtBpfD+SBiCFXRKwB+iTwxX0WW4erN6quibL4PYUASD3+FhoqKsacEjYlOZg=="],
 
     "@nestjs-modules/mailer": ["@nestjs-modules/mailer@2.0.2", "", { "dependencies": { "@css-inline/css-inline": "0.14.1", "glob": "10.3.12" }, "optionalDependencies": { "@types/ejs": "^3.1.5", "@types/mjml": "^4.7.4", "@types/pug": "^2.0.10", "ejs": "^3.1.10", "handlebars": "^4.7.8", "liquidjs": "^10.11.1", "mjml": "^4.15.3", "preview-email": "^3.0.19", "pug": "^3.0.2" }, "peerDependencies": { "@nestjs/common": ">=7.0.9", "@nestjs/core": ">=7.0.9", "nodemailer": ">=6.4.6" } }, "sha512-+z4mADQasg0H1ZaGu4zZTuKv2pu+XdErqx99PLFPzCDNTN/q9U59WPgkxVaHnsvKHNopLj5Xap7G4ZpptduoYw=="],
 

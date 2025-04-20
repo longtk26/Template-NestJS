@@ -12,8 +12,12 @@ import { Prisma, TokenType } from '@prisma/client';
 import { MailService } from 'src/applications/mail/service/mail.service';
 import { console } from 'inspector';
 import { PinoLogger } from 'nestjs-pino';
-import { PrismaService } from 'src/core/orm/prisma';
-import { PrismaClientManager } from 'src/core/orm/prisma-client-manager';
+import {
+  Propagation,
+  Transactional,
+  TransactionHost,
+} from '@nestjs-cls/transactional';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 
 @Injectable()
 export class AuthService {
@@ -22,8 +26,10 @@ export class AuthService {
     private readonly tokenRepository: TokenRepository,
     private readonly mailService: MailService,
     private readonly logger: PinoLogger,
-    private readonly prismaClientManager: PrismaClientManager,
-  ) {}
+    private readonly transactionHost: TransactionHost<TransactionalAdapterPrisma>,
+  ) {
+    this.logger.setContext(AuthService.name);
+  }
 
   async forgotPassword(data: ForgotPasswordRequestDto) {
     const user = await this.userRepository.getUserByEmail(data.email);
@@ -65,41 +71,59 @@ export class AuthService {
     });
   }
 
+  @Transactional()
   async resetPassword(data: ResetPasswordRequestDto) {
-    // Validate confirmation password
-    if (data.password !== data.confirmPassword) {
-      throw new BadRequestException('Passwords do not match');
-    }
-    const hashedToken = crypto
-      .createHash('sha256')
-      .update(data.token)
-      .digest('hex');
-    console.log('hashedToken', hashedToken);
-    const tokenInfo = await this.tokenRepository.findTokenByToken(hashedToken);
+    try {
+      // Validate confirmation password
+      if (data.password !== data.confirmPassword) {
+        throw new BadRequestException('Passwords do not match');
+      }
 
-    if (!tokenInfo) {
-      throw new BadRequestException('Invalid or expired token');
-    }
+      const hashedToken = crypto
+        .createHash('sha256')
+        .update(data.token)
+        .digest('hex');
 
-    const hashedPassword = await bcryptjs.hash(data.password, 10);
+      this.logger.debug(
+        `Processing reset password with hashedToken: ${hashedToken}`,
+      );
 
-    // await this.tokenRepository.transaction(async () => {
-    // });
-    await this.prismaClientManager.transaction(async () => {
+      const tokenInfo =
+        await this.tokenRepository.findTokenByToken(hashedToken);
+
+      if (!tokenInfo) {
+        throw new BadRequestException('Invalid or expired token');
+      }
+
+      const hashedPassword = await bcryptjs.hash(data.password, 10);
+
       await this.userRepository.updateUser(tokenInfo.userId, {
         password: hashedPassword,
       });
+
+      throw new BadRequestException('User not found');
+
+      // Then delete the token - use the correct property
       await this.tokenRepository.delete({
         options: {
-          id: tokenInfo.ids,
+          id: tokenInfo.id, // Make sure this property name is correct
         },
       });
-    });
 
-    // Send confirmation email
-    return {
-      message: 'Password reset successfully',
-    };
+      // Send confirmation email
+      return {
+        message: 'Password reset successfully',
+      };
+    } catch (error) {
+      // Log the error for debugging
+      this.logger.error(
+        `Error in resetPassword: ${error.message}`,
+        error.stack,
+      );
+
+      // Re-throw the error to trigger transaction rollback
+      throw error;
+    }
   }
 
   private async generatePasswordResetToken(userId: string): Promise<string> {

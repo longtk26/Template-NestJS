@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, Token as PrismaToken, TokenType } from '@prisma/client';
 import dayjs from 'dayjs';
-import { PrismaClientManager } from 'src/core/orm/prisma-client-manager';
 import { BaseRepository } from 'src/core/repository/base.repository';
 import utc from 'dayjs/plugin/utc';
-import { PinoLogger } from 'nestjs-pino';
+import { TransactionHost } from '@nestjs-cls/transactional';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 dayjs.extend(utc);
 
 @Injectable()
@@ -14,11 +14,12 @@ export class TokenRepository extends BaseRepository<
   Prisma.TokenWhereInput
 > {
   protected readonly modelName: string = 'token';
+  constructor(txHost: TransactionHost<TransactionalAdapterPrisma>) {
+    super(txHost);
+  }
 
   async findTokenByToken(token: string) {
-    console.log(`current day is ${dayjs().utc()}`);
-    console.log(`token is ${token}`);
-    return await this.prisma.token.findUnique({
+    return this.prisma.tx.token.findUnique({
       where: {
         token,
         type: TokenType.RESET_PASSWORD,

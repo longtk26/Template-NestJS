@@ -1,20 +1,23 @@
 import { Global, Module } from '@nestjs/common';
 import { ClsModule } from 'nestjs-cls';
-import { RequestContext } from './request-context';
+import { PrismaService } from '../orm/prisma';
+import { ClsPluginTransactional } from '@nestjs-cls/transactional';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
+
 @Global()
 @Module({
   imports: [
     ClsModule.forRoot({
+      plugins: [
+        new ClsPluginTransactional({
+          adapter: new TransactionalAdapterPrisma({
+            prismaInjectionToken: PrismaService,
+          }),
+        }),
+      ],
       global: true,
-      middleware: {
-        mount: true,
-        setup: (cls) => {
-          cls.set('prismaTransactionClient', null);
-        },
-      },
+      middleware: { mount: true },
     }),
   ],
-  providers: [RequestContext],
-  exports: [RequestContext],
 })
-export class RequestContextModule {}
+export class AppClsModule {}
