@@ -1,10 +1,14 @@
 model User {
   id                       String    @id @default(uuid())
-  name                     String
+  firstName                String
+  lastName                 String
   email                    String    @unique
   password                 String
+  phone                    String?   @unique
+  address                  String?
   isRequiredChangePassword Boolean   @default(false)
   isVerified               Boolean   @default(false)
+  lastLogin                DateTime?
   createdAt                DateTime  @default(now())
   updatedAt                DateTime? @updatedAt
   deletedAt                DateTime?
