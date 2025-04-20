@@ -71,59 +71,41 @@ export class AuthService {
     });
   }
 
-  @Transactional()
   async resetPassword(data: ResetPasswordRequestDto) {
-    try {
-      // Validate confirmation password
-      if (data.password !== data.confirmPassword) {
-        throw new BadRequestException('Passwords do not match');
-      }
+    if (data.password !== data.confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
 
-      const hashedToken = crypto
-        .createHash('sha256')
-        .update(data.token)
-        .digest('hex');
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(data.token)
+      .digest('hex');
 
-      this.logger.debug(
-        `Processing reset password with hashedToken: ${hashedToken}`,
-      );
+    const tokenInfo = await this.tokenRepository.findTokenByToken(hashedToken);
 
-      const tokenInfo =
-        await this.tokenRepository.findTokenByToken(hashedToken);
+    if (!tokenInfo) {
+      throw new BadRequestException('Invalid or expired token');
+    }
 
-      if (!tokenInfo) {
-        throw new BadRequestException('Invalid or expired token');
-      }
+    const hashedPassword = await bcryptjs.hash(data.password, 10);
 
-      const hashedPassword = await bcryptjs.hash(data.password, 10);
-
+    const result = await this.tokenRepository.transactional(async () => {
       await this.userRepository.updateUser(tokenInfo.userId, {
         password: hashedPassword,
       });
 
-      throw new BadRequestException('User not found');
-
-      // Then delete the token - use the correct property
       await this.tokenRepository.delete({
         options: {
           id: tokenInfo.id, // Make sure this property name is correct
         },
       });
+      return { delete: true };
+    });
+    this.logger.info(`Password reset for user ${tokenInfo.userId}: ${result}`);
 
-      // Send confirmation email
-      return {
-        message: 'Password reset successfully',
-      };
-    } catch (error) {
-      // Log the error for debugging
-      this.logger.error(
-        `Error in resetPassword: ${error.message}`,
-        error.stack,
-      );
-
-      // Re-throw the error to trigger transaction rollback
-      throw error;
-    }
+    return {
+      message: 'Password reset successfully',
+    };
   }
 
   private async generatePasswordResetToken(userId: string): Promise<string> {

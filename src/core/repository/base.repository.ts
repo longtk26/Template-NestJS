@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { TransactionHost } from '@nestjs-cls/transactional';
+import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 
 @Injectable()
@@ -44,5 +44,10 @@ export abstract class BaseRepository<T, C, O> {
     return this.prisma.tx[this.modelName].delete({
       where: options,
     });
+  }
+
+  @Transactional()
+  async transactional<T>(callback: () => Promise<T>): Promise<T> {
+    return callback();
   }
 }
