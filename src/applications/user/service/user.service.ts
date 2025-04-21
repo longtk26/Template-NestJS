@@ -91,7 +91,7 @@ export class UserService {
 
     return {
       id: data.id,
-      name: data.name,
+      name: data.firstName,
       email: data.email,
       isVerified: data.isVerified,
     };

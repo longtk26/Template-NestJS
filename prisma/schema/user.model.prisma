@@ -13,7 +13,8 @@ model User {
   updatedAt                DateTime? @updatedAt
   deletedAt                DateTime?
 
-  tokens Token[]
+  tokens   Token[]
+  AuditLog AuditLog[]
 
   @@map("users")
 }

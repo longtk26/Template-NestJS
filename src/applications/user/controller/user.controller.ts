@@ -29,6 +29,7 @@ import {
 import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { UserRequest } from '../interface/user.interface';
 import { Public } from 'src/applications/guards/decorators/guard.decorator';
+import { AuditLog } from 'src/applications/audit-log/decorators/audit-log.decorator';
 
 @Controller('user')
 export class UserController {
@@ -39,12 +40,14 @@ export class UserController {
     this.logger.setContext(UserController.name);
   }
 
+  // @Public()
   @Post('sign-up')
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'User created successfully',
     type: AuthUserResponseDTO,
   })
+  @AuditLog('<name_admin> have created <name_user> on <timestamp>')
   async signUp(@Res() res: Response, @Body() createUserDto: CreateUserDTO) {
     const data = await this.userService.createUser(createUserDto);
 

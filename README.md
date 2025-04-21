@@ -6,6 +6,8 @@
 2. [Basic knowledges](#basic-knowledges)
    - [TypeScript types: unknown, void, never, any, null and undefined](#typescript-types-unknown-void-never-any-null-and-undefined)
 3. [Handle transaction with prisma using NestJS-CLS](#handle-transaction-with-prisma-using-nestjs-cls)
+4. [Flow of Two Factor Authentication](#flow-of-two-factor-authentication)
+5. [Audit Logging](#audit-logging)
 
 ## Introduction
 
@@ -311,3 +313,5 @@ export abstract class BaseRepository<T, C, O> {
 4. **Request-Scoped**: Works correctly even in concurrent requests since the storage is request-scoped
 
 By leveraging NestJS-CLS, we've eliminated the complexity of transaction management while maintaining full transactional integrity in our application.
+
+## Flow of Two Factor Authentication

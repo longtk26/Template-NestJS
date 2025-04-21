@@ -46,6 +46,7 @@ export class UserRepository extends BaseRepository<
     const data = this.prisma.tx.user.create({
       data: {
         ...createUserRepository,
+        lastName: '',
       },
     });
 

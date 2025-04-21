@@ -12,6 +12,7 @@ import { HealthModule } from './applications/health/health.module';
 import { GuardModule } from './applications/guards/guard.module';
 import { AuthModule } from './applications/auth/auth.module';
 import { AppClsModule } from './core/cls/cls.module';
+import { AuditLogModule } from './applications/audit-log/audit-log.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AppClsModule } from './core/cls/cls.module';
     AppClsModule,
     RedisModule,
     WorkerModule,
+    AuditLogModule,
   ],
   providers: [
     {
