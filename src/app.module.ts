@@ -13,10 +13,16 @@ import { GuardModule } from './applications/guards/guard.module';
 import { AuthModule } from './applications/auth/auth.module';
 import { AppClsModule } from './core/cls/cls.module';
 import { AuditLogModule } from './applications/audit-log/audit-log.module';
+import { validateEnv } from './config/env.validation';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
+      validate: validateEnv,
+      validationOptions: {
+        abortEarly: true,
+        allowUnknown: false,
+      },
       isGlobal: true,
       load: [config],
     }),

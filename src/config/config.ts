@@ -21,7 +21,7 @@ const config = () => ({
     service: process.env.EMAIL_SERVICE,
   },
   timeNotifyRemider: process.env.TIME_NOTIFY_REMINDER || 1000 * 60 * 5,
-  client_url: process.env.CLIENT_URL,
+  clientUrl: process.env.CLIENT_URL,
   jwt: {
     accessTokenExpires: process.env.JWT_ACCESS_TOKEN_EXPIRES,
     refreshTokenExpires: process.env.JWT_REFRESH_TOKEN_EXPIRES,
@@ -38,7 +38,7 @@ export enum ConfigEnum {
   SECRET_KEY = 'secretKey',
   EMAIL_CONFIG = 'email',
   TIME_NOTIFY_REMINDER = 'timeNotifyRemider',
-  CLIENT_URL = 'client_url',
+  CLIENT_URL = 'clientUrl',
   JWT_CONFIG = 'jwt',
   SALT_ROUNDS = 'saltRounds',
 }

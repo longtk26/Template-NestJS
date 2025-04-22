@@ -4,6 +4,9 @@ import { Logger as LoggerPino } from 'nestjs-pino';
 import { ValidationPipe } from '@nestjs/common';
 import { HttpExceptionFilter } from './filter/http-exception.filter';
 import { settingSwagger } from './config/swagger';
+import { ConfigEnum } from './config/config';
+import { BrokerConfig, JwtConfig } from './config/interface';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
