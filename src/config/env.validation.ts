@@ -33,12 +33,7 @@ export type EnvSchema = z.infer<typeof envSchema>;
 export function checkUnexpectedEnvVars(
   rootDir: string = process.cwd(),
 ): string[] {
-  const envFiles = [
-    '.env',
-    '.env.local',
-    '.env.development',
-    '.env.production',
-  ];
+  const envFiles = ['.env'];
   const unexpectedVars: string[] = [];
   const schemaKeys = Object.keys(envSchema.shape);
 
