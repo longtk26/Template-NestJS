@@ -9,6 +9,11 @@ export class CreateUserDTO {
   firstName: string;
 
   @ApiProperty()
+  @IsNotEmpty({ message: 'Please enter name' })
+  @IsString({ message: 'Please enter a valid name' })
+  lastName: string;
+
+  @ApiProperty()
   @IsEmail()
   @IsNotEmpty({ message: 'Please enter email' })
   email: string;

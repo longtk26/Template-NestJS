@@ -1,3 +1,5 @@
+import config from './config';
+
 export interface DatabaseConfig {
   postgresUri: string;
 }
@@ -24,3 +26,6 @@ export interface JwtConfig {
   accessTokenExpires: string;
   refreshTokenExpires: string;
 }
+
+export type ConfigType = ReturnType<typeof config>;
+export type ConfigObjKey = keyof ConfigType;

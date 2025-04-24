@@ -65,4 +65,24 @@ export class UserRepository extends BaseRepository<
 
     return user;
   }
+
+  async createManyUser(data: Prisma.UserCreateInput[]) {
+    const users = this.prisma.tx.user.createMany({
+      data,
+    });
+
+    return users;
+  }
+
+  async getUsersInListEmail(emails: string[]) {
+    const users = this.prisma.tx.user.findMany({
+      where: {
+        email: {
+          in: emails,
+        },
+      },
+    });
+
+    return users;
+  }
 }

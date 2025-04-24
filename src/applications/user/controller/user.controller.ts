@@ -8,6 +8,9 @@ import {
   Post,
   Req,
   Res,
+  StreamableFile,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from '../service/user.service';
 import { SuccessResponse } from 'src/core/response/success.response';
@@ -30,6 +33,10 @@ import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { UserRequest } from '../interface/user.interface';
 import { Public } from 'src/applications/guards/decorators/guard.decorator';
 import { AuditLog } from 'src/applications/audit-log/decorators/audit-log.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import * as ExcelJS from 'exceljs';
+import { createReadStream } from 'fs';
+import { join } from 'path';
 
 @Controller('user')
 export class UserController {
@@ -106,5 +113,58 @@ export class UserController {
       message: 'Update user successfully',
       data: data,
     }).send(res);
+  }
+
+  @Public()
+  @UseInterceptors(FileInterceptor('file'))
+  @Post('create-many')
+  async createManyUser(
+    @UploadedFile() file: Express.Multer.File,
+    @Res() res: Response,
+  ) {
+    const workBook = new ExcelJS.Workbook();
+    await workBook.xlsx.load(file.buffer as unknown as ExcelJS.Buffer);
+    const workSheet = workBook.getWorksheet(1);
+    const data = [];
+    workSheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) {
+        return;
+      }
+      const rowData = {
+        firstName: row.getCell(1).value,
+        lastName: row.getCell(2).value,
+        email: row.getCell(3).value,
+        password: row.getCell(4).value,
+      };
+      data.push(rowData);
+    });
+    const result = await this.userService.createManyUser(data);
+
+    if (result.errorReportBuffer) {
+      await workBook.xlsx.load(
+        result.errorReportBuffer as unknown as ExcelJS.Buffer,
+      );
+      await workBook.xlsx.writeFile('filename.xlsx');
+    }
+
+    // If no errors, return standard JSON response
+    return new SuccessResponse({
+      status: HttpStatus.OK,
+      message: 'Create many users successfully',
+      data: result,
+    }).send(res);
+  }
+
+  @Public()
+  @Get('xlsx')
+  getFile(@Res({ passthrough: true }) res: Response): StreamableFile {
+    console.log(join(process.cwd(), 'filename.xlsx'));
+    const file = createReadStream(join(process.cwd(), 'filename.xlsx'));
+    res.set({
+      'Content-Type':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename=filename.xlsx',
+    });
+    return new StreamableFile(file);
   }
 }
