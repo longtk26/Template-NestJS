@@ -15,7 +15,13 @@ async function bootstrap() {
 
   app.useLogger(app.get(LoggerPino));
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // This removes properties that don't have decorators in the DTO
+      forbidNonWhitelisted: true, // This throws an error if unexpected properties are provided
+      transform: true, // This transforms the objects to be instances of their class
+    }),
+  );
 
   settingSwagger(app);
   app.enableCors();

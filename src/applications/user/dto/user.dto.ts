@@ -1,6 +1,7 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator';
 import { SuccessResponse } from 'src/core/response/success.response';
+import { AtLeastOneField } from 'src/core/validator/at-least-one-field.validator';
 
 export class CreateUserDTO {
   @ApiProperty()
@@ -84,10 +85,8 @@ export class GetUserResponseDataDTO {
   isVerified: boolean;
 }
 
-export class UpdateUserDTO {
-  name?: string | null = null;
-  phone?: string | null = null;
-}
+@AtLeastOneField()
+export class UpdateUserDTO extends PartialType(CreateUserDTO) {}
 
 export class AuthUserResponseDTO extends SuccessResponse<AuthUserResponseDataDTO> {
   @ApiProperty({ type: () => AuthUserResponseDataDTO })
