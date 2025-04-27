@@ -130,6 +130,6 @@ export class CSVFileService extends BaseFileService {
         [key: string]: AcceptedData;
       }[],
     );
-    return new Uint8Array(Buffer.from(asString(csv)));
+    return new Uint8Array(Buffer.from(asString(csv).trim()));
   }
 }
