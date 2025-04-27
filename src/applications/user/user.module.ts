@@ -7,6 +7,7 @@ import { UserRepository } from './repository/user.repository';
 import { ConfigModule } from '@nestjs/config';
 import { SecurityModule } from 'src/core/security/security.module';
 import { PrismaModule } from 'src/core/orm/prisma.module';
+import { FileModule } from '../file/file.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { PrismaModule } from 'src/core/orm/prisma.module';
     ConfigModule,
     SecurityModule,
     PrismaModule,
+    FileModule,
   ],
   controllers: [UserController],
   providers: [UserService, UserRepository],

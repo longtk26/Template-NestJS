@@ -122,36 +122,13 @@ export class UserController {
     @UploadedFile() file: Express.Multer.File,
     @Res() res: Response,
   ) {
-    const workBook = new ExcelJS.Workbook();
-    await workBook.xlsx.load(file.buffer as unknown as ExcelJS.Buffer);
-    const workSheet = workBook.getWorksheet(1);
-    const data = [];
-    workSheet.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) {
-        return;
-      }
-      const rowData = {
-        firstName: row.getCell(1).value,
-        lastName: row.getCell(2).value,
-        email: row.getCell(3).value,
-        password: row.getCell(4).value,
-      };
-      data.push(rowData);
-    });
-    const result = await this.userService.createManyUser(data);
-
-    if (result.errorReportBuffer) {
-      await workBook.xlsx.load(
-        result.errorReportBuffer as unknown as ExcelJS.Buffer,
-      );
-      await workBook.xlsx.writeFile('filename.xlsx');
-    }
+    const data = await this.userService.createManyUser(file);
 
     // If no errors, return standard JSON response
     return new SuccessResponse({
-      status: HttpStatus.OK,
+      status: HttpStatus.CREATED,
       message: 'Create many users successfully',
-      data: result,
+      data: data,
     }).send(res);
   }
 

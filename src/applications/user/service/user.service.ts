@@ -14,6 +14,10 @@ import { SecurityService } from 'src/core/security/security.service';
 import * as crypto from 'crypto';
 import * as ExcelJS from 'exceljs';
 import { Prisma } from '@prisma/client';
+import { CSVFileService } from 'src/applications/file/service/csv-file.service';
+import { z } from 'zod';
+import { add } from 'lodash';
+import { createManyUserSchema, CreateManyUserType } from '../types/user.types';
 
 @Injectable()
 export class UserService {
@@ -23,6 +27,7 @@ export class UserService {
     private readonly logger: PinoLogger,
     private readonly workerProducer: WorkerProducer,
     private readonly securityService: SecurityService,
+    private readonly csvFileService: CSVFileService,
   ) {
     this.logger.setContext(UserService.name);
   }
@@ -119,73 +124,32 @@ export class UserService {
     };
   }
 
-  async createManyUser(createManyUserDto: CreateUserDTO[]) {
-    // Create a common password for all users
-    const randomPassword = crypto.randomBytes(8).toString('hex');
-    const hashedPassword =
-      await this.securityService.hashPassword(randomPassword);
-    const inputUsers = createManyUserDto.map((user) => ({
-      ...user,
-      password: hashedPassword,
-    }));
-
-    // Results tracking
-    let successRecords = 0;
-    const failedRecords = [];
-    const listEmail = inputUsers.map((user) => user.email);
-    const existingUsers =
-      await this.userRepository.getUsersInListEmail(listEmail);
-    if (existingUsers.length > 0) {
-      existingUsers.forEach((user) => {
-        failedRecords.push({
-          ...user,
-          error: 'Email already exists',
-        });
-      });
-    }
-    const userValids = inputUsers.filter((user) => {
-      return !existingUsers.some(
-        (existingUser) => existingUser.email === user.email,
+  async createManyUser(file: Express.Multer.File) {
+    const { successRecords, failedRecords } =
+      await this.csvFileService.validateFile<CreateManyUserType>(
+        file,
+        createManyUserSchema,
       );
-    });
 
-    await this.userRepository.createManyUser(userValids);
+    return await this.userRepository.transactional(async () => {
+      await this.userRepository.createManyUser(
+        successRecords as Prisma.UserCreateInput[],
+      );
+      let signedUrl = '';
+      if (failedRecords.length > 0) {
+        const failedFile = await this.csvFileService.createFile(
+          failedRecords,
+          'failed-records',
+        );
 
-    successRecords = userValids.length;
-
-    // Generate error report file if there are failed records
-    console.log('failedRecords', failedRecords);
-    if (failedRecords.length > 0) {
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Failed Records');
-
-      // Add headers
-      worksheet.addRow(['First Name', 'Last Name', 'Email', 'Error']);
-
-      // Add data rows
-      failedRecords.forEach((record) => {
-        worksheet.addRow([
-          record.firstName,
-          record.lastName,
-          record.email,
-          record.error,
-        ]);
-      });
-
-      // Generate buffer for file download
-      const buffer = await workbook.xlsx.writeBuffer();
+        signedUrl = await this.csvFileService.uploadFile(failedFile);
+      }
 
       return {
-        successCount: successRecords,
-        failureCount: failedRecords.length,
-        failedRecords,
-        errorReportBuffer: buffer,
+        successRecords: successRecords.length,
+        failedRecords: failedRecords.length,
+        signedUrl,
       };
-    }
-
-    return {
-      successCount: successRecords,
-      failureCount: 0,
-    };
+    });
   }
 }

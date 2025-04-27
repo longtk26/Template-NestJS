@@ -22,6 +22,10 @@ export const envSchema = z.object({
   JWT_ACCESS_TOKEN_EXPIRES: z.string(),
   JWT_REFRESH_TOKEN_EXPIRES: z.string(),
   SALT_ROUNDS: z.string(),
+  AWS_REGION: z.string().optional().default('ap-southeast-1'),
+  AWS_ACCESS_KEY_ID: z.string(),
+  AWS_SECRET_ACCESS_KEY: z.string(),
+  S3_BUCKET_NAME: z.string(),
 });
 
 export type EnvSchema = z.infer<typeof envSchema>;

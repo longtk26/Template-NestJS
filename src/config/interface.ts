@@ -27,5 +27,12 @@ export interface JwtConfig {
   refreshTokenExpires: string;
 }
 
+export interface S3Config {
+  region: string;
+  accessKey: string;
+  secretKey: string;
+  bucketName: string;
+}
+
 export type ConfigType = ReturnType<typeof config>;
 export type ConfigObjKey = keyof ConfigType;

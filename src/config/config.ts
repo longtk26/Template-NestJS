@@ -27,6 +27,12 @@ const config = () => ({
     refreshTokenExpires: process.env.JWT_REFRESH_TOKEN_EXPIRES,
   },
   saltRounds: process.env.SALT_ROUNDS,
+  s3: {
+    region: process.env.AWS_REGION || 'us-east-1',
+    accessKey: process.env.AWS_ACCESS_KEY_ID,
+    secretKey: process.env.AWS_SECRET_ACCESS_KEY,
+    bucketName: process.env.S3_BUCKET_NAME,
+  },
 });
 
 export enum ConfigEnum {
@@ -41,6 +47,7 @@ export enum ConfigEnum {
   CLIENT_URL = 'clientUrl',
   JWT_CONFIG = 'jwt',
   SALT_ROUNDS = 'saltRounds',
+  S3_CONFIG = 's3',
 }
 
 export default config;
