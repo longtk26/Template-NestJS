@@ -17,7 +17,11 @@ import { Prisma } from '@prisma/client';
 import { CSVFileService } from 'src/applications/file/service/csv-file.service';
 import { z } from 'zod';
 import { add } from 'lodash';
-import { createManyUserSchema, CreateManyUserType } from '../types/user.types';
+import {
+  CreateManyUserArrayType,
+  createManyUserSchemaArray,
+  CreateManyUserType,
+} from '../types/user.types';
 
 @Injectable()
 export class UserService {
@@ -126,10 +130,13 @@ export class UserService {
 
   async createManyUser(file: Express.Multer.File) {
     const { successRecords, failedRecords } =
-      await this.csvFileService.validateFile<CreateManyUserType>(
-        file,
-        createManyUserSchema,
-      );
+      await this.csvFileService.validateFile<
+        CreateManyUserArrayType,
+        CreateManyUserType
+      >(file, createManyUserSchemaArray);
+
+    console.log('successRecords', successRecords);
+    console.log('failedRecords', failedRecords);
 
     return await this.userRepository.transactional(async () => {
       await this.userRepository.createManyUser(

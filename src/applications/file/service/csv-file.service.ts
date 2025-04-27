@@ -1,11 +1,13 @@
 import { BaseFileService } from './base-file.service';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { parse } from 'csv-parse/sync';
 import { z, ZodIssue } from 'zod';
+import { mkConfig, generateCsv, asString } from 'export-to-csv';
+import { AcceptedData } from 'export-to-csv/output/lib/types';
 
-export interface ValidationResultCSV<T> {
-  successRecords: T[];
-  failedRecords: T[];
+export interface ValidationResultCSV<R> {
+  successRecords: R[];
+  failedRecords: R[];
 }
 
 @Injectable()
@@ -15,15 +17,14 @@ export class CSVFileService extends BaseFileService {
     fileName: string,
   ): Promise<Express.Multer.File> {
     // Convert data to CSV format
-    const csvData = this.convertToCSV(data);
-    const bufferCsvData = Buffer.from(csvData);
+    const bufferCsvData = this.convertToCSV(data);
     const file: Express.Multer.File = {
       fieldname: fileName,
       originalname: `${fileName}-${Date.now()}.csv`,
       encoding: '7bit',
       mimetype: 'text/csv',
       size: bufferCsvData.length,
-      buffer: bufferCsvData,
+      buffer: bufferCsvData as unknown as Buffer,
       stream: null,
       destination: null,
       filename: `${fileName}-${Date.now()}.csv`,
@@ -31,62 +32,77 @@ export class CSVFileService extends BaseFileService {
     };
     return file;
   }
-  async validateFile<T>(
+  async validateFile<T, R>(
     file: Express.Multer.File,
     zodSchema: z.ZodType<T>,
-  ): Promise<ValidationResultCSV<T>> {
+  ): Promise<ValidationResultCSV<R>> {
     // Check if the file is a CSV
     if (file.mimetype !== 'text/csv') {
-      throw new Error('Invalid file type. Only CSV files are allowed.');
+      throw new BadRequestException(
+        'Invalid file type. Only CSV files are allowed.',
+      );
     }
 
     // Parse the CSV file into records
     const records = await this.parseCSV(file);
-    const listEmail = records.map((record) => record.email);
+    const recordsAfterCheckEmail = [];
 
-    // Check for duplicate emails in database
+    // Check for duplicate emails in the file
+    const failedRecords: R[] = [];
+    const uniqueEmails = new Set();
+    for (const record of records) {
+      if (uniqueEmails.has(record.email)) {
+        failedRecords.push({
+          ...record,
+          reason: 'Email already exists in your file',
+        });
+        continue;
+      }
+      uniqueEmails.add(record.email);
+      recordsAfterCheckEmail.push(record);
+    }
+    const listEmail = Array.from(uniqueEmails) as string[];
+
+    // Check for duplicate emails in system
     const existingEmails = (
       await this.userRepository.getUsersInListEmail(listEmail)
     ).map((user) => user.email);
 
-    // Validate records against the provided Zod schema
-    const successRecords: T[] = [];
-    const failedRecords: T[] = [];
-    const validRecords = records.filter((record) => {
-      const isNotExistEmail = !existingEmails.includes(record.email);
+    // Filter out records that are not in the system
+    const validRecords = recordsAfterCheckEmail.filter((record) => {
+      const isExistEmail = existingEmails.includes(record.email);
 
-      if (!isNotExistEmail) {
+      if (isExistEmail) {
         failedRecords.push({
           ...record,
-          reason: 'Email already exists',
+          reason: 'Email already exists in system',
         });
       }
 
-      return isNotExistEmail;
+      return !isExistEmail;
     });
+    this.logger.info(validRecords, 'validRecords:::::::::::::');
 
+    let successRecords: R[] = [];
     // Validate each record against the schema
-    for (const record of validRecords) {
-      try {
-        const validatedRecord = await zodSchema.parseAsync(record);
-        const successRecord = {
-          ...validatedRecord,
-          password: '123',
-        };
-        successRecords.push(successRecord);
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          failedRecords.push({
-            ...record,
-            reason: error.errors.reduce((acc: string, issue: ZodIssue) => {
-              return `${acc}${issue.path.join('.')} - ${issue.message}\n`;
-            }, ''),
-          });
-        } else {
-          failedRecords.push({
-            ...record,
-            reason: 'Invalid data format',
-          });
+    try {
+      // Only include the fields defined in the schema and nothing else
+      successRecords = (await zodSchema.parseAsync(validRecords)) as R[];
+      this.logger.info(`validatedRecords: ${JSON.stringify(successRecords)}`);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        this.logger.error(`ZodError: ${JSON.stringify(error)}`);
+        for (const err of error.issues) {
+          const rowNumber = Number(err.path[0]);
+          const fieldErr = err.path[1];
+          const row = recordsAfterCheckEmail[rowNumber];
+
+          const reason = `${fieldErr} (${err.message})`;
+
+          failedRecords[rowNumber] = {
+            ...row,
+            reason,
+          };
         }
       }
     }
@@ -110,13 +126,13 @@ export class CSVFileService extends BaseFileService {
     return records;
   }
 
-  convertToCSV<T>(data: T[]): string {
-    const headers = Object.keys(data[0]);
-    const csvRows = [
-      headers.join(','), // Header row
-      ...data.map((row: any) => headers.map((header) => row[header]).join(',')), // Data rows
-    ];
-
-    return csvRows.join('\n');
+  convertToCSV<T>(data: T[]): Uint8Array {
+    const csvConfig = mkConfig({ useKeysAsHeaders: true });
+    const csv = generateCsv(csvConfig)(
+      data as {
+        [key: string]: AcceptedData;
+      }[],
+    );
+    return new Uint8Array(Buffer.from(asString(csv)));
   }
 }

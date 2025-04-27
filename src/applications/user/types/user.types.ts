@@ -6,9 +6,12 @@ export const createManyUserSchema = z.object({
   lastName: z.string().nonempty(),
   phone: z.string().optional(),
   address: z.string().optional(),
-  password: z.string().optional(),
-  reason: z.string().optional(),
+  password: z.string().optional().default('123456'),
 });
+
+export const createManyUserSchemaArray = z.array(createManyUserSchema);
+
+export type CreateManyUserArrayType = z.infer<typeof createManyUserSchemaArray>;
 
 export type CreateManyUserType = z.infer<typeof createManyUserSchema>;
 

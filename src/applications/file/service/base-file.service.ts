@@ -26,7 +26,7 @@ export abstract class BaseFileService {
     fileName: string,
   ): Promise<Express.Multer.File>;
 
-  abstract validateFile<T>(
+  abstract validateFile<T, R>(
     file: Express.Multer.File,
     zodSchema: z.ZodType<T>,
   ): Promise<unknown>;
