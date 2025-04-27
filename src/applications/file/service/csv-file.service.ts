@@ -46,6 +46,7 @@ export class CSVFileService extends BaseFileService {
     // Parse the CSV file into records
     const records = await this.parseCSV(file);
     const recordsAfterCheckEmail = [];
+    this.logger.info(records, 'Parsed records: ');
 
     // Check for duplicate emails in the file
     const failedRecords: R[] = [];
@@ -64,6 +65,7 @@ export class CSVFileService extends BaseFileService {
     const listEmail = Array.from(uniqueEmails) as string[];
 
     // Check for duplicate emails in system
+
     const existingEmails = (
       await this.userRepository.getUsersInListEmail(listEmail)
     ).map((user) => user.email);
@@ -81,17 +83,14 @@ export class CSVFileService extends BaseFileService {
 
       return !isExistEmail;
     });
-    this.logger.info(validRecords, 'validRecords:::::::::::::');
 
     let successRecords: R[] = [];
     // Validate each record against the schema
     try {
       // Only include the fields defined in the schema and nothing else
       successRecords = (await zodSchema.parseAsync(validRecords)) as R[];
-      this.logger.info(`validatedRecords: ${JSON.stringify(successRecords)}`);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        this.logger.error(`ZodError: ${JSON.stringify(error)}`);
         for (const err of error.issues) {
           const rowNumber = Number(err.path[0]);
           const fieldErr = err.path[1];
@@ -114,13 +113,11 @@ export class CSVFileService extends BaseFileService {
   }
 
   async parseCSV(file: Express.Multer.File): Promise<any[]> {
-    const fileContent = file.buffer.toString('utf8');
-
     // Parse CSV with headers
-    const records = parse(fileContent, {
+    const records = parse(file.buffer, {
       columns: true,
-      skip_empty_lines: true,
       trim: true,
+      skipRecordsWithEmptyValues: true,
     });
 
     return records;
