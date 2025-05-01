@@ -66,9 +66,21 @@ export class UserRepository extends BaseRepository<
     return user;
   }
 
-  async createManyUser(data: Prisma.UserCreateInput[]) {
-    const users = this.prisma.tx.user.createMany({
+  async createManyUserWithDefaultRole(
+    data: Prisma.UserCreateInput[],
+    defaultRoleId: string,
+  ) {
+    const users = await this.prisma.tx.user.createManyAndReturn({
       data,
+    });
+
+    const userRoles = users.map((user) => ({
+      userId: user.id,
+      roleId: defaultRoleId,
+    }));
+
+    await this.prisma.tx.userRole.createMany({
+      data: userRoles,
     });
 
     return users;

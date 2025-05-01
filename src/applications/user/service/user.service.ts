@@ -22,6 +22,11 @@ import {
   createManyUserSchemaArray,
   CreateManyUserType,
 } from '../types/user.types';
+import { S3ClientService } from 'src/provider/s3/s3.service';
+import dayjs from 'dayjs';
+import { RoleRepository } from 'src/applications/role/repository/role.repository';
+import { ERole } from 'src/applications/role/constants/role.constants';
+import { console } from 'inspector';
 
 @Injectable()
 export class UserService {
@@ -32,6 +37,8 @@ export class UserService {
     private readonly workerProducer: WorkerProducer,
     private readonly securityService: SecurityService,
     private readonly csvFileService: CSVFileService,
+    private readonly s3Service: S3ClientService,
+    private readonly roleRepository: RoleRepository,
   ) {
     this.logger.setContext(UserService.name);
   }
@@ -129,27 +136,48 @@ export class UserService {
   }
 
   async createManyUser(file: Express.Multer.File) {
-    const { successRecords, failedRecords } =
-      await this.csvFileService.validateFile<
-        CreateManyUserArrayType,
-        CreateManyUserType
-      >(file, createManyUserSchemaArray);
+    // Step 1: Validate file
+    this.csvFileService.validateFile(file);
 
-    console.log('successRecords', successRecords);
-    console.log('failedRecords', failedRecords);
+    // Step 2: Read file
+    const dataUsers = (await this.csvFileService.readFile(
+      file,
+      'CSV',
+    )) as CreateManyUserArrayType;
+
+    // Step 3: Validate data
+    const { successRecords, failedRecords } = await this.validateDataUsers(
+      dataUsers,
+      createManyUserSchemaArray,
+    );
+
+    // Step 4: Create bulk user
+    this.logger.info(`successRecords - ${successRecords.length}`);
+    this.logger.info(`failedRecords - ${failedRecords.length}`);
+    const currentTimeStamp = dayjs().valueOf();
 
     return await this.userRepository.transactional(async () => {
-      await this.userRepository.createManyUser(
-        successRecords as Prisma.UserCreateInput[],
-      );
+      const role = await this.roleRepository.findByName(ERole.LEARNER);
+      if (successRecords.length > 0) {
+        await this.userRepository.createManyUserWithDefaultRole(
+          successRecords as Prisma.UserCreateInput[],
+          role.id,
+        );
+      }
       let signedUrl = '';
       if (failedRecords.length > 0) {
-        const failedFile = await this.csvFileService.createFile(
+        const fileName = `${currentTimeStamp}-failed-records`;
+        const failedFile = this.csvFileService.writeFile(
           failedRecords,
-          'failed-records',
+          fileName,
+          'CSV',
         );
 
-        signedUrl = await this.csvFileService.uploadFile(failedFile);
+        const filePath = await this.s3Service.uploadFile(
+          failedFile,
+          `${fileName}.csv`,
+        );
+        signedUrl = await this.s3Service.getFileUrl(filePath);
       }
 
       return {
@@ -158,5 +186,94 @@ export class UserService {
         signedUrl,
       };
     });
+  }
+
+  private async validateDataUsers(
+    dataUsers: CreateManyUserArrayType,
+    zodSchema: z.ZodSchema<CreateManyUserArrayType>,
+  ) {
+    const dataUsersAfterCheckDuplicateEmail = [];
+    const failedRecords = [];
+    let successRecords: CreateManyUserArrayType = [];
+
+    // Check for duplicate emails in the file
+    const uniqueEmails = new Set();
+    for (const dataUser of dataUsers) {
+      if (uniqueEmails.has(dataUser.email)) {
+        failedRecords.push({
+          ...dataUser,
+          description: 'Email already exists in your file',
+        });
+        continue;
+      }
+      uniqueEmails.add(dataUser.email);
+      dataUsersAfterCheckDuplicateEmail.push(dataUser);
+    }
+    const listEmail = Array.from(uniqueEmails) as string[];
+    this.logger.info(`email duplicate in file - ${failedRecords.length}`);
+
+    // Check for duplicate emails in system
+    const existingEmailsInSystem = (
+      await this.userRepository.getUsersInListEmail(listEmail)
+    ).map((user) => user.email);
+    const uniqueEmailsInSystem = new Set(existingEmailsInSystem);
+    this.logger.info(
+      `existingEmailsInSystem - ${existingEmailsInSystem.length}`,
+    );
+
+    // Filter out records that are not in the system
+    const validDatas = dataUsersAfterCheckDuplicateEmail.filter((record) => {
+      const isExistEmail = uniqueEmailsInSystem.has(record.email);
+
+      if (isExistEmail) {
+        failedRecords.push({
+          ...record,
+          description: 'Email already exists in system',
+        });
+      }
+
+      return !isExistEmail;
+    });
+    this.logger.info(`validDatas - ${validDatas.length}`);
+    // Validate each record against the schema
+    try {
+      // Only include the fields defined in the schema and nothing else
+      successRecords = await zodSchema.parseAsync(validDatas);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const listRowNumber = new Set();
+
+        for (const err of error.issues) {
+          const rowNumber = Number(err.path[0]);
+          const fieldErr = err.path[1];
+          const row = validDatas[rowNumber];
+
+          const description = `${fieldErr} (${err.message})`;
+
+          if (!listRowNumber.has(rowNumber)) {
+            failedRecords.push({
+              ...row,
+              description,
+            });
+          }
+          listRowNumber.add(rowNumber);
+        }
+        successRecords = validDatas.filter(
+          (_, index) => !listRowNumber.has(index),
+        );
+      }
+    }
+
+    const defaultPassword = await this.securityService.hashPassword('123456');
+
+    successRecords = successRecords.map((record) => ({
+      ...record,
+      password: defaultPassword,
+    }));
+
+    return {
+      successRecords,
+      failedRecords,
+    };
   }
 }

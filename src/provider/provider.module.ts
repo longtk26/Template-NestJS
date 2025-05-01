@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
-import { S3ClientService } from './minio/s3.service';
-import { ConfigModule } from '@nestjs/config';
+import { S3ClientService } from './s3/s3.service';
 
 @Module({
-  imports: [ConfigModule],
+  imports: [],
   providers: [S3ClientService],
   exports: [S3ClientService],
 })

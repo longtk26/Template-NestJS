@@ -10,5 +10,7 @@ migratepull:
 	bunx prisma db pull
 format:
 	bunx prisma format
+seed:
+	bunx prisma db seed
 
-.PHONY: newmg migratedown migratepull migrateup migratedev format
+.PHONY: newmg migratedown migratepull migrateup migratedev format seed

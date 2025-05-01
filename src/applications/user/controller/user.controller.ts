@@ -131,17 +131,4 @@ export class UserController {
       data: data,
     }).send(res);
   }
-
-  @Public()
-  @Get('xlsx')
-  getFile(@Res({ passthrough: true }) res: Response): StreamableFile {
-    console.log(join(process.cwd(), 'filename.xlsx'));
-    const file = createReadStream(join(process.cwd(), 'filename.xlsx'));
-    res.set({
-      'Content-Type':
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': 'attachment; filename=filename.xlsx',
-    });
-    return new StreamableFile(file);
-  }
 }

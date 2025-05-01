@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail } from 'class-validator';
+import { IsEmail, IsEnum } from 'class-validator';
+import { OptionResendEmail } from '../types/auth.types';
 
 export class ForgotPasswordRequestDto {
   @ApiProperty({
@@ -24,4 +25,18 @@ export class ResetPasswordRequestDto {
     description: 'The token for resetting the password',
   })
   token: string;
+}
+
+export class ResendEmailDto {
+  @ApiProperty({
+    description: 'The email address of the user requesting to resend the email',
+  })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({
+    description: 'The type of email to resend',
+  })
+  @IsEnum(OptionResendEmail)
+  option: OptionResendEmail;
 }

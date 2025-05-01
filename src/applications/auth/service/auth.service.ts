@@ -18,6 +18,7 @@ import {
   TransactionHost,
 } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
+import { OptionResendEmail } from '../types/auth.types';
 
 @Injectable()
 export class AuthService {
@@ -124,5 +125,12 @@ export class AuthService {
       },
     });
     return token;
+  }
+
+  async resendEmail(data: { email: string; option: string }) {
+    switch (data.option) {
+      case OptionResendEmail.FORGOT_PASSWORD:
+        return this.forgotPassword({ email: data.email });
+    }
   }
 }

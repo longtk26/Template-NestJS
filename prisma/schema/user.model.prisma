@@ -16,5 +16,8 @@ model User {
   tokens   Token[]
   AuditLog AuditLog[]
 
+  roleId    String?
+  userRoles UserRole[]
+
   @@map("users")
 }

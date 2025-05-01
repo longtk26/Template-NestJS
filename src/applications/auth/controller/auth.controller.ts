@@ -1,6 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import {
   ForgotPasswordRequestDto,
+  ResendEmailDto,
   ResetPasswordRequestDto,
 } from '../dto/auth.dto';
 import { AuthService } from '../service/auth.service';
@@ -24,6 +25,15 @@ export class AuthController {
     await this.authService.resetPassword(body);
     return {
       message: 'Password reset successfully',
+    };
+  }
+
+  @Public()
+  @Post('resend-email')
+  async resendEmail(@Body() body: ResendEmailDto) {
+    await this.authService.resendEmail(body);
+    return {
+      message: 'Email resent successfully',
     };
   }
 }
