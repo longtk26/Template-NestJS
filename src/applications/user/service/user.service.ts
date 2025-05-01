@@ -151,21 +151,26 @@ export class UserService {
       createManyUserSchemaArray,
     );
 
-    // Step 4: Create bulk user
-    this.logger.info(`successRecords - ${successRecords.length}`);
-    this.logger.info(`failedRecords - ${failedRecords.length}`);
-    const currentTimeStamp = dayjs().valueOf();
+    // Step 4: Create password for each user
+    const defaultPassword = await this.securityService.hashPassword('123456');
+    const successRecordsWithPassword = successRecords.map((record) => ({
+      ...record,
+      password: defaultPassword,
+    }));
 
+    // Step 5: Create users in db
     return await this.userRepository.transactional(async () => {
       const role = await this.roleRepository.findByName(ERole.LEARNER);
-      if (successRecords.length > 0) {
+      if (successRecordsWithPassword.length > 0) {
         await this.userRepository.createManyUserWithDefaultRole(
-          successRecords as Prisma.UserCreateInput[],
+          successRecordsWithPassword as Prisma.UserCreateInput[],
           role.id,
         );
       }
+
       let signedUrl = '';
       if (failedRecords.length > 0) {
+        const currentTimeStamp = dayjs().valueOf();
         const fileName = `${currentTimeStamp}-failed-records`;
         const failedFile = this.csvFileService.writeFile(
           failedRecords,
@@ -210,16 +215,12 @@ export class UserService {
       dataUsersAfterCheckDuplicateEmail.push(dataUser);
     }
     const listEmail = Array.from(uniqueEmails) as string[];
-    this.logger.info(`email duplicate in file - ${failedRecords.length}`);
 
     // Check for duplicate emails in system
     const existingEmailsInSystem = (
       await this.userRepository.getUsersInListEmail(listEmail)
     ).map((user) => user.email);
     const uniqueEmailsInSystem = new Set(existingEmailsInSystem);
-    this.logger.info(
-      `existingEmailsInSystem - ${existingEmailsInSystem.length}`,
-    );
 
     // Filter out records that are not in the system
     const validDatas = dataUsersAfterCheckDuplicateEmail.filter((record) => {
@@ -234,42 +235,40 @@ export class UserService {
 
       return !isExistEmail;
     });
-    this.logger.info(`validDatas - ${validDatas.length}`);
-    // Validate each record against the schema
+
     try {
-      // Only include the fields defined in the schema and nothing else
+      // Only include the fields defined in the schema
       successRecords = await zodSchema.parseAsync(validDatas);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const listRowNumber = new Set();
+        const listErrorForEachRow = new Map<number, string[]>();
 
         for (const err of error.issues) {
           const rowNumber = Number(err.path[0]);
           const fieldErr = err.path[1];
-          const row = validDatas[rowNumber];
-
           const description = `${fieldErr} (${err.message})`;
 
-          if (!listRowNumber.has(rowNumber)) {
-            failedRecords.push({
-              ...row,
-              description,
-            });
+          if (!listErrorForEachRow.get(rowNumber)) {
+            listErrorForEachRow.set(rowNumber, []);
           }
-          listRowNumber.add(rowNumber);
+          listErrorForEachRow.get(rowNumber).push(description);
         }
+
+        const keysListError = new Set(listErrorForEachRow.keys());
+        for (const key of keysListError) {
+          const record = validDatas[key];
+          failedRecords.push({
+            ...record,
+            description: listErrorForEachRow.get(key).join(', '),
+          });
+        }
+
+        // Filter out the records that do not have errors
         successRecords = validDatas.filter(
-          (_, index) => !listRowNumber.has(index),
+          (_, index) => !keysListError.has(index),
         );
       }
     }
-
-    const defaultPassword = await this.securityService.hashPassword('123456');
-
-    successRecords = successRecords.map((record) => ({
-      ...record,
-      password: defaultPassword,
-    }));
 
     return {
       successRecords,
