@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>HLS Streaming from S3</title>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: #000;
+        margin: 0;
+      }
+      video {
+        width: 80%;
+        max-width: 800px;
+      }
+    </style>
+  </head>
+  <body>
+    <video id="video" controls autoplay></video>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script>
+      const video = document.getElementById('video');
+      const videoSrc = ''; // Replace with your S3 HLS link
+
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(videoSrc);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          video.play();
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = videoSrc;
+        video.addEventListener('loadedmetadata', function () {
+          video.play();
+        });
+      } else {
+        alert('Your browser does not support HLS.');
+      }
+    </script>
+  </body>
+</html>
