@@ -131,4 +131,13 @@ export class UserController {
       data: data,
     }).send(res);
   }
+
+  @Get('hello')
+  async hello(@Res() res: Response) {
+    return new SuccessResponse({
+      status: HttpStatus.OK,
+      message: 'Hello world',
+      data: null,
+    }).send(res);
+  }
 }

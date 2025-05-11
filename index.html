@@ -6,6 +6,7 @@
     <style>
       body {
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         height: 100vh;
@@ -15,32 +16,66 @@
       video {
         width: 80%;
         max-width: 800px;
+        margin-bottom: 1rem;
+      }
+      select {
+        padding: 0.5rem;
+        font-size: 1rem;
       }
     </style>
   </head>
   <body>
     <video id="video" controls autoplay></video>
+    <select id="qualitySelector">
+      <option value="master">Auto</option>
+      <option value="_360">360p</option>
+      <option value="_540">540p</option>
+      <option value="_720">720p</option>
+      <option value="_1080">1080p</option>
+    </select>
 
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script>
       const video = document.getElementById('video');
-      const videoSrc = ''; // Replace with your S3 HLS link
+      const qualitySelector = document.getElementById('qualitySelector');
 
-      if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(videoSrc);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, function () {
-          video.play();
-        });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = videoSrc;
-        video.addEventListener('loadedmetadata', function () {
-          video.play();
-        });
-      } else {
-        alert('Your browser does not support HLS.');
+      const baseUrl =
+        'https://leo-video-output2.s3.ap-southeast-1.amazonaws.com/video-uuid'; // Replace with your base video URL (without resolution suffix or .m3u8)
+      let hls;
+
+      function loadVideo(quality) {
+        const suffix = quality === 'master' ? '.m3u8' : `${quality}.m3u8`;
+        const videoSrc = `${baseUrl}${suffix}`;
+
+        if (hls) {
+          hls.destroy();
+        }
+
+        if (Hls.isSupported()) {
+          hls = new Hls();
+          hls.loadSource(videoSrc);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, function () {
+            video.play();
+          });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = videoSrc;
+          video.addEventListener('loadedmetadata', function () {
+            video.play();
+          });
+        } else {
+          alert('Your browser does not support HLS.');
+        }
       }
+
+      // Initial load
+      loadVideo('master');
+
+      // Listen for quality change
+      qualitySelector.addEventListener('change', function () {
+        const selectedQuality = this.value;
+        loadVideo(selectedQuality);
+      });
     </script>
   </body>
 </html>

@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { SendMailPayload } from '../types/mail.types';
 import { ConfigService } from '@nestjs/config';
-import nodemailer, { Transporter } from 'nodemailer';
+import { Transporter } from 'nodemailer';
+import * as nodemailer from 'nodemailer';
 import { EmailConfig } from 'src/config/interface';
 import { ConfigEnum } from 'src/config/config';
 import { PinoLogger } from 'nestjs-pino';
@@ -39,7 +40,7 @@ export class MailService {
 
   private initMailService() {
     const emailConfig = this.config.get<EmailConfig>(ConfigEnum.EMAIL_CONFIG);
-
+    this.logger.info(nodemailer, 'nodemailer');
     return nodemailer.createTransport({
       service: emailConfig.service,
       host: emailConfig.host,

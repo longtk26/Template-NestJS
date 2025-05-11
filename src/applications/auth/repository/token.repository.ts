@@ -5,7 +5,6 @@ import { BaseRepository } from 'src/core/repository/base.repository';
 import utc from 'dayjs/plugin/utc';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
-dayjs.extend(utc);
 
 @Injectable()
 export class TokenRepository extends BaseRepository<
