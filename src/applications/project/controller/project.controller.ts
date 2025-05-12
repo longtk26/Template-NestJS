@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { ProjectService } from '../service/project.service';
 import { Public } from 'src/applications/guards/decorators/guard.decorator';
 
@@ -10,7 +10,7 @@ export class ProjectController {
   @Public()
   async registerProject() {
     const projectId = '123';
-    console.log(`Timestamp ${new Date().getTime()}`);
-    return this.projectService.registerProject(projectId);
+    const userId = crypto.randomUUID();
+    return this.projectService.registerProject(projectId, userId);
   }
 }

@@ -7,6 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PinoLogger } from 'nestjs-pino';
 import { RedisConfig } from 'src/config/interface';
 import { ConfigEnum } from 'src/config/config';
+import { redisProvider, redlockProvider } from './redis.provider';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { ConfigEnum } from 'src/config/config';
       inject: [ConfigService, PinoLogger],
     }),
   ],
-  providers: [RedisClient],
-  exports: [RedisClient],
+  providers: [RedisClient, redisProvider, redlockProvider],
+  exports: [RedisClient, redisProvider, redlockProvider],
 })
 export class RedisModule {}
