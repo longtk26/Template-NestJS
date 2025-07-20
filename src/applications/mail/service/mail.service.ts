@@ -14,7 +14,7 @@ export class MailService {
     private readonly config: ConfigService,
     private readonly logger: PinoLogger,
   ) {
-    this.transporter = this.initMailService();
+    // this.transporter = this.initMailService();
   }
 
   async sendMail(payload: SendMailPayload) {
