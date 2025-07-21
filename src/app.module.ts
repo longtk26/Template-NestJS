@@ -10,6 +10,8 @@ import { HttpExceptionFilter } from './filter/http-exception.filter';
 import { HealthModule } from './applications/health/health.module';
 import { GuardModule } from './applications/guards/guard.module';
 import { QueueModule } from './providers/queue.module';
+import { CronjobModule } from './applications/cronjob/cronjob.module';
+import { SSEModule } from './applications/sse/sse.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { QueueModule } from './providers/queue.module';
     GuardModule,
     RedisModule,
     QueueModule,
+    CronjobModule,
+    SSEModule,
   ],
   providers: [
     {

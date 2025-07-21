@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SSE Client - Persistent Connection</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        font-weight: 300;
+      }
+
+      .header p {
+        opacity: 0.9;
+        font-size: 1.1rem;
+      }
+
+      .controls {
+        padding: 30px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      input[type='url'] {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e1e8ed;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      input[type='url']:focus {
+        outline: none;
+        border-color: #4facfe;
+        box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+      }
+
+      .button-group {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      button {
+        flex: 1;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .btn-connect {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .btn-connect:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-disconnect {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        color: white;
+      }
+
+      .btn-disconnect:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+      }
+
+      .btn-clear {
+        background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
+        color: white;
+      }
+
+      .btn-clear:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(254, 202, 87, 0.3);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
+      .status {
+        padding: 20px 30px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .status-disconnected {
+        background: rgba(255, 107, 107, 0.1);
+        color: #ff6b6b;
+      }
+
+      .status-connecting {
+        background: rgba(254, 202, 87, 0.1);
+        color: #feca57;
+      }
+
+      .status-connected {
+        background: rgba(46, 213, 115, 0.1);
+        color: #2ed573;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .messages {
+        padding: 30px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .message {
+        margin-bottom: 15px;
+        padding: 15px 20px;
+        border-radius: 10px;
+        border-left: 4px solid #4facfe;
+        background: rgba(79, 172, 254, 0.05);
+        animation: slideIn 0.3s ease;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .message-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .message-type {
+        font-weight: 600;
+        color: #4facfe;
+        font-size: 0.9rem;
+      }
+
+      .message-time {
+        color: #666;
+        font-size: 0.8rem;
+      }
+
+      .message-data {
+        color: #333;
+        line-height: 1.5;
+        word-break: break-word;
+      }
+
+      .no-messages {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        padding: 40px 20px;
+      }
+
+      .stats {
+        padding: 20px 30px;
+        background: rgba(79, 172, 254, 0.05);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+      }
+
+      .stat {
+        text-align: center;
+      }
+
+      .stat-value {
+        display: block;
+        font-size: 2rem;
+        font-weight: bold;
+        color: #4facfe;
+      }
+
+      .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>SSE Client</h1>
+        <p>Real-time Server-Sent Events with Persistent Connection</p>
+      </div>
+
+      <div class="controls">
+        <div class="form-group">
+          <label for="serverUrl">NestJS Server SSE Endpoint:</label>
+          <input
+            type="url"
+            id="serverUrl"
+            value="http://localhost:8082/sse/job-translation-v2"
+            placeholder="http://localhost:3000/events"
+          />
+        </div>
+
+        <div class="button-group">
+          <button id="connectBtn" class="btn-connect">Connect</button>
+          <button id="disconnectBtn" class="btn-disconnect" disabled>
+            Disconnect
+          </button>
+          <button id="clearBtn" class="btn-clear">Clear Messages</button>
+        </div>
+      </div>
+
+      <div class="status">
+        <div id="statusIndicator" class="status-indicator status-disconnected">
+          <div class="status-dot"></div>
+          <span>Disconnected</span>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <span id="messageCount" class="stat-value">0</span>
+          <span class="stat-label">Messages</span>
+        </div>
+        <div class="stat">
+          <span id="reconnectCount" class="stat-value">0</span>
+          <span class="stat-label">Reconnects</span>
+        </div>
+        <div class="stat">
+          <span id="uptime" class="stat-value">00:00</span>
+          <span class="stat-label">Uptime</span>
+        </div>
+      </div>
+
+      <div class="messages">
+        <div id="messageList">
+          <div class="no-messages">
+            No messages received yet. Connect to start receiving events.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      class SSEClient {
+        constructor() {
+          this.eventSource = null;
+          this.serverUrl = '';
+          this.isConnected = false;
+          this.messageCount = 0;
+          this.reconnectCount = 0;
+          this.connectTime = null;
+          this.uptimeInterval = null;
+          this.reconnectAttempts = 0;
+          this.maxReconnectAttempts = 5;
+          this.reconnectDelay = 1000; // Start with 1 second
+
+          this.initializeElements();
+          this.bindEvents();
+        }
+
+        initializeElements() {
+          this.elements = {
+            serverUrl: document.getElementById('serverUrl'),
+            connectBtn: document.getElementById('connectBtn'),
+            disconnectBtn: document.getElementById('disconnectBtn'),
+            clearBtn: document.getElementById('clearBtn'),
+            statusIndicator: document.getElementById('statusIndicator'),
+            messageList: document.getElementById('messageList'),
+            messageCount: document.getElementById('messageCount'),
+            reconnectCount: document.getElementById('reconnectCount'),
+            uptime: document.getElementById('uptime'),
+          };
+        }
+
+        bindEvents() {
+          this.elements.connectBtn.addEventListener('click', () =>
+            this.connect(),
+          );
+          this.elements.disconnectBtn.addEventListener('click', () =>
+            this.disconnect(),
+          );
+          this.elements.clearBtn.addEventListener('click', () =>
+            this.clearMessages(),
+          );
+
+          // Allow Enter key to connect
+          this.elements.serverUrl.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !this.isConnected) {
+              this.connect();
+            }
+          });
+        }
+
+        connect() {
+          this.serverUrl = this.elements.serverUrl.value.trim();
+
+          if (!this.serverUrl) {
+            alert('Please enter a valid server URL');
+            return;
+          }
+
+          if (this.isConnected) {
+            this.disconnect();
+          }
+
+          this.setStatus('connecting', 'Connecting...');
+          this.elements.connectBtn.disabled = true;
+
+          try {
+            this.eventSource = new EventSource(this.serverUrl);
+            this.setupEventListeners();
+          } catch (error) {
+            console.error('Failed to create EventSource:', error);
+            this.setStatus('disconnected', 'Connection Failed');
+            this.elements.connectBtn.disabled = false;
+          }
+        }
+
+        setupEventListeners() {
+          this.eventSource.onopen = (event) => {
+            console.log('SSE connection opened');
+            this.isConnected = true;
+            this.reconnectAttempts = 0;
+            this.reconnectDelay = 1000;
+            this.connectTime = new Date();
+            this.startUptimeTimer();
+
+            this.setStatus('connected', 'Connected');
+            this.elements.connectBtn.disabled = true;
+            this.elements.disconnectBtn.disabled = false;
+
+            this.addMessage('connection', 'Connected to server', new Date());
+          };
+
+          this.eventSource.onmessage = (event) => {
+            console.log('Message received:', event.data);
+            this.handleMessage('message', event.data, new Date());
+          };
+
+          this.eventSource.onerror = (event) => {
+            console.error('SSE error:', event);
+
+            if (this.isConnected) {
+              this.addMessage('error', 'Connection error occurred', new Date());
+            }
+
+            // Handle reconnection
+            if (this.eventSource.readyState === EventSource.CLOSED) {
+              this.handleDisconnection();
+            }
+          };
+
+          // Handle custom event types
+          this.eventSource.addEventListener('custom-event', (event) => {
+            console.log('Custom event received:', event.data);
+            this.handleMessage('custom-event', event.data, new Date());
+          });
+
+          // Handle heartbeat events
+          this.eventSource.addEventListener('heartbeat', (event) => {
+            console.log('Heartbeat received');
+            // Don't display heartbeat messages to avoid spam
+          });
+        }
+
+        handleMessage(type, data, timestamp) {
+          this.messageCount++;
+          this.elements.messageCount.textContent = this.messageCount;
+          this.addMessage(type, data, timestamp);
+        }
+
+        handleDisconnection() {
+          this.isConnected = false;
+          this.stopUptimeTimer();
+          this.setStatus('disconnected', 'Disconnected');
+          this.elements.connectBtn.disabled = false;
+          this.elements.disconnectBtn.disabled = true;
+
+          this.addMessage('connection', 'Disconnected from server', new Date());
+
+          // Auto-reconnect logic
+          if (this.reconnectAttempts < this.maxReconnectAttempts) {
+            this.attemptReconnect();
+          }
+        }
+
+        attemptReconnect() {
+          this.reconnectAttempts++;
+          this.setStatus(
+            'connecting',
+            `Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
+          );
+
+          setTimeout(() => {
+            if (
+              !this.isConnected &&
+              this.reconnectAttempts <= this.maxReconnectAttempts
+            ) {
+              console.log(`Reconnection attempt ${this.reconnectAttempts}`);
+              this.reconnectCount++;
+              this.elements.reconnectCount.textContent = this.reconnectCount;
+
+              this.eventSource = new EventSource(this.serverUrl);
+              this.setupEventListeners();
+            }
+          }, this.reconnectDelay);
+
+          // Exponential backoff
+          this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000); // Max 30 seconds
+        }
+
+        disconnect() {
+          if (this.eventSource) {
+            this.eventSource.close();
+            this.eventSource = null;
+          }
+
+          this.isConnected = false;
+          this.reconnectAttempts = this.maxReconnectAttempts; // Prevent auto-reconnect
+          this.stopUptimeTimer();
+
+          this.setStatus('disconnected', 'Disconnected');
+          this.elements.connectBtn.disabled = false;
+          this.elements.disconnectBtn.disabled = true;
+
+          this.addMessage('connection', 'Manually disconnected', new Date());
+        }
+
+        setStatus(status, text) {
+          const indicator = this.elements.statusIndicator;
+          indicator.className = `status-indicator status-${status}`;
+          indicator.querySelector('span').textContent = text;
+        }
+
+        addMessage(type, data, timestamp) {
+          const messageList = this.elements.messageList;
+
+          // Remove "no messages" placeholder
+          const noMessages = messageList.querySelector('.no-messages');
+          if (noMessages) {
+            noMessages.remove();
+          }
+
+          const messageElement = document.createElement('div');
+          messageElement.className = 'message';
+
+          messageElement.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-type">${type.toUpperCase()}</span>
+                        <span class="message-time">${this.formatTime(timestamp)}</span>
+                    </div>
+                    <div class="message-data">${this.escapeHtml(data)}</div>
+                `;
+
+          messageList.appendChild(messageElement);
+          messageList.scrollTop = messageList.scrollHeight;
+
+          // Limit messages to prevent memory issues
+          const messages = messageList.querySelectorAll('.message');
+          if (messages.length > 100) {
+            messages[0].remove();
+          }
+        }
+
+        clearMessages() {
+          this.elements.messageList.innerHTML =
+            '<div class="no-messages">Messages cleared.</div>';
+          this.messageCount = 0;
+          this.elements.messageCount.textContent = '0';
+        }
+
+        startUptimeTimer() {
+          this.uptimeInterval = setInterval(() => {
+            if (this.connectTime) {
+              const uptime = Math.floor((new Date() - this.connectTime) / 1000);
+              const minutes = Math.floor(uptime / 60);
+              const seconds = uptime % 60;
+              this.elements.uptime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+          }, 1000);
+        }
+
+        stopUptimeTimer() {
+          if (this.uptimeInterval) {
+            clearInterval(this.uptimeInterval);
+            this.uptimeInterval = null;
+          }
+        }
+
+        formatTime(date) {
+          return date.toLocaleTimeString();
+        }
+
+        escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+      }
+
+      // Initialize the SSE client when the page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        new SSEClient();
+      });
+
+      // Handle page visibility change to reconnect when page becomes visible
+      document.addEventListener('visibilitychange', () => {
+        if (
+          !document.hidden &&
+          window.sseClient &&
+          !window.sseClient.isConnected
+        ) {
+          // Optionally auto-reconnect when page becomes visible
+          console.log(
+            'Page became visible, connection status:',
+            window.sseClient.isConnected,
+          );
+        }
+      });
+    </script>
+  </body>
+</html>
